@@ -3,6 +3,7 @@ package com.habibi.core.service;
 import com.habibi.core.dto.WithdrawDto;
 import com.habibi.core.entity.Account;
 import com.habibi.core.entity.Transaction;
+import com.habibi.core.enums.TransactionStatus;
 import com.habibi.core.enums.TransactionType;
 import com.habibi.core.repository.TransactionRepository;
 import lombok.AllArgsConstructor;
@@ -22,6 +23,7 @@ public class TransactionService {
         transaction.setTransactionType(TransactionType.WITHDRAW);
         transaction.setAmount(withdrawDto.getAmount());
         transaction.setTimestamp(new Date());
+        transaction.setTransactionStatus(TransactionStatus.CREATED);
         return transaction;
     }
 
@@ -29,7 +31,6 @@ public class TransactionService {
         Transaction rollbackTransaction = new Transaction();
         rollbackTransaction.setAccount(account);
         rollbackTransaction.setTransactionType(TransactionType.ROLLBACK_FOR_WITHDRAW);
-        rollbackTransaction.setAmount(withdarwTransaction.getAmount());
         rollbackTransaction.setTimestamp(new Date());
         rollbackTransaction.setRollbackFor(withdarwTransaction.getTransactionId());
 

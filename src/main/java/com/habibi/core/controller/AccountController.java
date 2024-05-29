@@ -3,6 +3,7 @@ package com.habibi.core.controller;
 import com.habibi.core.dto.AccountDto;
 import com.habibi.core.dto.RollbackWithdrawDto;
 import com.habibi.core.dto.WithdrawDto;
+import com.habibi.core.exceptions.InsufficientFundsException;
 import com.habibi.core.service.AccountService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -19,7 +20,7 @@ public class AccountController {
     private AccountService accountService;
 
     @PostMapping("/withdraw")
-    public void withdraw(@RequestBody WithdrawDto withdrawDto){
+    public void withdraw(@RequestBody WithdrawDto withdrawDto) throws InsufficientFundsException {
         if(!accountService.isValid(withdrawDto))
             return; //todo throw an exception
 
