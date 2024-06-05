@@ -9,6 +9,6 @@ import java.util.UUID;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class RollbackWithdrawDto {
+public class WithdrawResponseDto {
     private UUID trackingCode;
 }

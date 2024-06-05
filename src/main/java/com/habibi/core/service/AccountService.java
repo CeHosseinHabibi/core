@@ -3,6 +3,7 @@ package com.habibi.core.service;
 import com.habibi.core.dto.AccountDto;
 import com.habibi.core.dto.RollbackWithdrawDto;
 import com.habibi.core.dto.WithdrawDto;
+import com.habibi.core.dto.WithdrawResponseDto;
 import com.habibi.core.entity.Account;
 import com.habibi.core.entity.Transaction;
 import com.habibi.core.enums.TransactionStatus;
@@ -37,13 +38,12 @@ public class AccountService {
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
 
     @Transactional
-    public void withdraw(WithdrawDto withdrawDto) throws InsufficientFundsException {
+    public WithdrawResponseDto withdraw(WithdrawDto withdrawDto) throws InsufficientFundsException {
 
 //        Account account = null;
 //        Transaction withdrawTransaction = null;
 //
 //        waitSomeMoments();
-//
 //        if (lock.readLock().tryLock()) {
 //            try {
 //                account = accountRepository.findById(withdrawDto.getAccountId()).orElseThrow();//todo handle exception
@@ -94,11 +94,13 @@ public class AccountService {
 
             withdrawTransaction.setTransactionStatus(TransactionStatus.SUCCESS);
             transactionRepository.save(withdrawTransaction);
+            return new WithdrawResponseDto(withdrawTransaction.getTrackingCode());
         }catch (OptimisticLockException optimisticLockException){
             //throw an exception
             //retry withdraw
         }
 
+        return null;
     }
 
     public List<AccountDto> getAll() {
@@ -123,7 +125,9 @@ public class AccountService {
     public void rollbackWithdraw(RollbackWithdrawDto rollbackWithdrawDto) {
         waitSomeMoments();
 
-        Transaction withdarwTransaction = transactionRepository.findById(rollbackWithdrawDto.getTransactionId()).orElseThrow();
+        Transaction withdarwTransaction = transactionRepository
+                .findByTrackingCode(rollbackWithdrawDto.getTrackingCode()).orElseThrow();
+
         if (withdarwTransaction.getIsRollbacked())
             return; //throw an exception;
 
