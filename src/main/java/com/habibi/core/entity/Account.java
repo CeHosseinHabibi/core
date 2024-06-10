@@ -1,7 +1,10 @@
 package com.habibi.core.entity;
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.Parameter;
 
@@ -9,7 +12,8 @@ import java.util.List;
 
 @Entity
 @Table
-@Data
+@Getter
+@Setter
 @AllArgsConstructor
 @NoArgsConstructor
 public class Account {
@@ -24,12 +28,12 @@ public class Account {
                     @Parameter(name = "increment_size", value = "1")
             }
     )
-    @Column(name = "account-id")
+    @Column(name = "account_id")
     private Long accountId;
 
     private Long balance = 100_000_000L;
 
-    @OneToMany(mappedBy="account")
+    @OneToMany(mappedBy = "account")
     private List<Transaction> transactions;
 
     @Version

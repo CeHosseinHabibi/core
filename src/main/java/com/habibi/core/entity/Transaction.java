@@ -3,11 +3,11 @@ package com.habibi.core.entity;
 import com.habibi.core.enums.TransactionStatus;
 import com.habibi.core.enums.TransactionType;
 import jakarta.persistence.*;
-import org.hibernate.annotations.Parameter;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.GenericGenerator;
+import org.hibernate.annotations.Parameter;
 
 import java.util.Date;
 import java.util.UUID;
@@ -32,9 +32,8 @@ public class Transaction {
     private Long transactionId;
 
     @ManyToOne
-    @JoinColumn(name="account-id")
+    @JoinColumn(name = "account_id")
     private Account account;
-
     private TransactionType transactionType;
     private Long amount;
     private Date timestamp;
