@@ -39,13 +39,13 @@ public class SynchronizedAccountServiceImpl implements AccountService {
     public synchronized WithdrawResponseDto withdraw(WithdrawDto withdrawDto) throws InsufficientFundsException {
         logger.info("\n\nThread.Id --> " + Thread.currentThread().getId() + " entered in: " + this.getClass().getCanonicalName() + "\n");
         waitSomeMoments();
-        UUID uuid = transactionalAccountServiceImpl.withdraw(withdrawDto);
+        UUID trackingCode = transactionalAccountServiceImpl.withdraw(withdrawDto);
 
-        if (uuid != null) {
-            return new WithdrawResponseDto(uuid);
+        if (trackingCode != null) {
+            return new WithdrawResponseDto(trackingCode);
         } else {
             //throw exception and retry
-            return null;
+            return null; //this line should be removed after throwing mentioned exception
         }
     }
 

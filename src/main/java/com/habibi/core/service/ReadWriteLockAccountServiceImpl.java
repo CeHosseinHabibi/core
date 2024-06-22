@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Random;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -39,27 +40,31 @@ public class ReadWriteLockAccountServiceImpl implements AccountService {
 
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock(true);
 
+    @SneakyThrows
     public WithdrawResponseDto withdraw(WithdrawDto withdrawDto) throws InsufficientFundsException {
         waitSomeMoments();
         logger.info("\n\nThread.Id --> " + Thread.currentThread().getId() + " entered in: " + this.getClass().getCanonicalName() + "\n");
 
-        try {
-            boolean isLockAcquired = lock.writeLock().tryLock(10, TimeUnit.SECONDS);
-            if (isLockAcquired) {
-                logger.info("\n\nThread.Id --> " + Thread.currentThread().getId() + " acquired lock " + "\n");
-                try {
-                    transactionalAccountServiceImpl.withdraw(withdrawDto);
-                } finally {
-                    lock.writeLock().unlock();
-                    logger.info("\n\nThread.Id --> " + Thread.currentThread().getId() + " released lock " + "\n");
+        boolean isLockAcquired = lock.writeLock().tryLock(10, TimeUnit.SECONDS);
+        if (isLockAcquired) {
+            logger.info("\n\nThread.Id --> " + Thread.currentThread().getId() + " acquired lock " + "\n");
+            try {
+                UUID trackingCode = transactionalAccountServiceImpl.withdraw(withdrawDto);
+
+                if (trackingCode != null) {
+                    return new WithdrawResponseDto(trackingCode);
+                } else {
+                    //throw exception and retry
+                    return null; //this line should be removed after throwing mentioned exception
                 }
-            } else {
-//                throw an exception to retry. because the thread con not acquire lock
+            } finally {
+                lock.writeLock().unlock();
+                logger.info("\n\nThread.Id --> " + Thread.currentThread().getId() + " released lock " + "\n");
             }
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
+        } else {
+//                throw an exception to retry. because the thread con not acquire lock
+            return null; //this line should be removed after throwing mentioned exception
         }
-        return null;
     }
 
     public List<AccountDto> getAll() {
