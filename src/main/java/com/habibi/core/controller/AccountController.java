@@ -9,6 +9,7 @@ import com.habibi.core.service.AccountService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,27 +23,31 @@ public class AccountController {
 
     @PostMapping("/withdraw")
     public WithdrawResponseDto withdraw(@RequestBody WithdrawDto withdrawDto) throws InsufficientFundsException {
-        if(!accountService.isValid(withdrawDto))
+        if (!accountService.isValid(withdrawDto))
             return null; //todo throw an exception
 
-        return accountService.withdraw(withdrawDto);
+        try {
+            return accountService.withdraw(withdrawDto);
+        } catch (ObjectOptimisticLockingFailureException objectOptimisticLockingFailureException) {
+            return accountService.withdraw(withdrawDto);
+        }
     }
 
     @PostMapping("/rollback-withdraw")
-    public void rollbackWithdraw(@RequestBody RollbackWithdrawDto rollbackWithdrawDto){
-        if(!accountService.isValid(rollbackWithdrawDto))
+    public void rollbackWithdraw(@RequestBody RollbackWithdrawDto rollbackWithdrawDto) {
+        if (!accountService.isValid(rollbackWithdrawDto))
             return; //todo throw an exception
 
         accountService.rollbackWithdraw(rollbackWithdrawDto);
     }
 
     @GetMapping
-    public List<AccountDto> getAllAccounts(){
+    public List<AccountDto> getAllAccounts() {
         return accountService.getAll();
     }
 
     @PostMapping
-    public ResponseEntity save(){
+    public ResponseEntity save() {
         return ResponseEntity.status(HttpStatus.CREATED).body("Created id: " + accountService.save());
     }
 }
