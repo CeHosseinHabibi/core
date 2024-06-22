@@ -31,8 +31,6 @@ public class TransactionalAccountServiceImpl {
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public UUID withdraw(WithdrawDto withdrawDto) throws InsufficientFundsException {
-        logger.info("\n\nThread.Id --> " + Thread.currentThread().getId() + " entered in: " + this.getClass().getCanonicalName() + "\n");
-
         Account account = accountRepository.findByAccountId(withdrawDto.getAccountId()).orElseThrow();//todo handle exception
         logger.info("\n\nThread.Id --> " + Thread.currentThread().getId() + " read the balance-> " + account.getBalance()
                 + ", this-> " + this + "\n");

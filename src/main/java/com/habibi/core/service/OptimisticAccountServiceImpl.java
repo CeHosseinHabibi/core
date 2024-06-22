@@ -41,9 +41,7 @@ public class OptimisticAccountServiceImpl implements AccountService {
 
     @Transactional
     public WithdrawResponseDto withdraw(WithdrawDto withdrawDto) throws InsufficientFundsException {
-        logger.info("Thread.Id --> " + Thread.currentThread().getId() + " " + this.getClass().getCanonicalName());
         waitSomeMoments();
-
         Account account = optimisticAccountRepository.findByAccountId(withdrawDto.getAccountId()).orElseThrow();//todo handle exception
         logger.info("Thread.Id --> " + Thread.currentThread().getId() + " read the balance-> " + account.getBalance()
                 + ", this-> " + this);

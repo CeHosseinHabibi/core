@@ -43,8 +43,6 @@ public class ReadWriteLockAccountServiceImpl implements AccountService {
     @SneakyThrows
     public WithdrawResponseDto withdraw(WithdrawDto withdrawDto) throws InsufficientFundsException {
         waitSomeMoments();
-        logger.info("\n\nThread.Id --> " + Thread.currentThread().getId() + " entered in: " + this.getClass().getCanonicalName() + "\n");
-
         boolean isLockAcquired = lock.writeLock().tryLock(10, TimeUnit.SECONDS);
         if (isLockAcquired) {
             logger.info("\n\nThread.Id --> " + Thread.currentThread().getId() + " acquired lock " + "\n");

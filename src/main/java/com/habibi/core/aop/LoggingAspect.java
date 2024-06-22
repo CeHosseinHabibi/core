@@ -14,17 +14,22 @@ import java.util.Arrays;
 @Component
 public class LoggingAspect {
     private static final Logger logger = LogManager.getLogger(LoggingAspect.class);
+
     @Pointcut("execution(public * com.habibi.core.controller.*.*(..))")
     private void publicMethodOfControllerPackage() {
     }
 
-    @Around(value = "publicMethodOfControllerPackage()")
+    @Pointcut("execution(public * com.habibi.core.service.*.*(..))")
+    public void publicMethodOfServicePackage() {
+    }
+
+    @Around(value = "publicMethodOfControllerPackage() || publicMethodOfServicePackage()")
     public Object logAround(ProceedingJoinPoint joinPoint) throws Throwable {
         Object[] args = joinPoint.getArgs();
         String methodName = joinPoint.getSignature().getName();
-        logger.info("Entered in  >> {}() - {}", methodName, Arrays.toString(args));
+        logger.info("Thread \"" + Thread.currentThread().getId() + "\" Entered in \"{}()\" with \"{}\" input", methodName, Arrays.toString(args));
         Object result = joinPoint.proceed();
-        logger.info("Exited from >> {}() - {}", methodName, result);
+        logger.info("Thread \"" + Thread.currentThread().getId() + "\" Exited from \"{}()\" with \"{}\" output", methodName, result);
         return result;
     }
 }

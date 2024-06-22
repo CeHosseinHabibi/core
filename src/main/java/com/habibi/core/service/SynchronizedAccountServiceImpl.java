@@ -37,7 +37,6 @@ public class SynchronizedAccountServiceImpl implements AccountService {
     private final AccountMapper accountMapper;
 
     public synchronized WithdrawResponseDto withdraw(WithdrawDto withdrawDto) throws InsufficientFundsException {
-        logger.info("\n\nThread.Id --> " + Thread.currentThread().getId() + " entered in: " + this.getClass().getCanonicalName() + "\n");
         waitSomeMoments();
         UUID trackingCode = transactionalAccountServiceImpl.withdraw(withdrawDto);
 
