@@ -11,8 +11,8 @@ import com.habibi.core.exceptions.InsufficientFundsException;
 import com.habibi.core.mapper.AccountMapper;
 import com.habibi.core.repository.OptimisticAccountRepository;
 import com.habibi.core.repository.TransactionRepository;
+import com.habibi.core.util.Utils;
 import lombok.AllArgsConstructor;
-import lombok.SneakyThrows;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -22,16 +22,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Locale;
-import java.util.Random;
-import java.util.concurrent.TimeUnit;
 
 @Service
 @AllArgsConstructor
 @ConditionalOnProperty(name = "lockStrategy", havingValue = "optimistic")
 public class OptimisticAccountServiceImpl implements AccountService {
     private static final Logger logger = LogManager.getLogger(OptimisticAccountServiceImpl.class);
-    private static final int MINIMUM_SLEEP_SECONDS = 10;
-    private static final int MAXIMUM_SLEEP_SECONDS = 20;
     private OptimisticAccountRepository optimisticAccountRepository;
     private TransactionRepository transactionRepository;
     private TransactionService transactionService;
@@ -41,7 +37,7 @@ public class OptimisticAccountServiceImpl implements AccountService {
 
     @Transactional
     public WithdrawResponseDto withdraw(WithdrawDto withdrawDto) throws InsufficientFundsException {
-        waitSomeMoments();
+        Utils.waitSomeMoments();
         Account account = optimisticAccountRepository.findByAccountId(withdrawDto.getAccountId()).orElseThrow();//todo handle exception
         logger.info("Thread.Id --> " + Thread.currentThread().getId() + " read the balance-> " + account.getBalance()
                 + ", this-> " + this);
@@ -76,17 +72,9 @@ public class OptimisticAccountServiceImpl implements AccountService {
         return optimisticAccountRepository.save(account).getAccountId();
     }
 
-    public boolean isValid(WithdrawDto withdrawDto) {
-        return true; //ToDo implement the logic
-    }
-
-    public boolean isValid(RollbackWithdrawDto rollbackWithdrawDto) {
-        return true; //ToDo implement the logic
-    }
-
     @Transactional
     public void rollbackWithdraw(RollbackWithdrawDto rollbackWithdrawDto) {
-        waitSomeMoments();
+        Utils.waitSomeMoments();
 
         Transaction withdarwTransaction = transactionRepository
                 .findByTrackingCode(rollbackWithdrawDto.getTrackingCode()).orElseThrow();
@@ -104,10 +92,5 @@ public class OptimisticAccountServiceImpl implements AccountService {
 
         account.setBalance(account.getBalance() + rollbackWithdrawTransaction.getAmount());
         optimisticAccountRepository.save(account);
-    }
-
-    @SneakyThrows
-    public void waitSomeMoments() {
-        TimeUnit.SECONDS.sleep(new Random().nextInt(MINIMUM_SLEEP_SECONDS, MAXIMUM_SLEEP_SECONDS));
     }
 }

@@ -10,6 +10,7 @@ import com.habibi.core.exceptions.InsufficientFundsException;
 import com.habibi.core.mapper.AccountMapper;
 import com.habibi.core.repository.AccountRepository;
 import com.habibi.core.repository.TransactionRepository;
+import com.habibi.core.util.Utils;
 import lombok.AllArgsConstructor;
 import lombok.SneakyThrows;
 import org.apache.logging.log4j.LogManager;
@@ -19,7 +20,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -29,20 +29,17 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 @ConditionalOnProperty(name = "lockStrategy", havingValue = "readWriteLock")
 public class ReadWriteLockAccountServiceImpl implements AccountService {
     private static final Logger logger = LogManager.getLogger(ReadWriteLockAccountServiceImpl.class);
-    private static final int MINIMUM_SLEEP_SECONDS = 2;
-    private static final int MAXIMUM_SLEEP_SECONDS = 7;
 
     private TransactionalAccountServiceImpl transactionalAccountServiceImpl;
     private TransactionService transactionService;
     private AccountRepository accountRepository;
     private TransactionRepository transactionRepository;
     private final AccountMapper accountMapper;
-
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock(true);
 
     @SneakyThrows
     public WithdrawResponseDto withdraw(WithdrawDto withdrawDto) throws InsufficientFundsException {
-        waitSomeMoments();
+        Utils.waitSomeMoments();
         boolean isLockAcquired = lock.writeLock().tryLock(10, TimeUnit.SECONDS);
         if (isLockAcquired) {
             logger.info("\n\nThread.Id --> " + Thread.currentThread().getId() + " acquired lock " + "\n");
@@ -75,17 +72,9 @@ public class ReadWriteLockAccountServiceImpl implements AccountService {
         return accountRepository.save(account).getAccountId();
     }
 
-    public boolean isValid(WithdrawDto withdrawDto) {
-        return true; //ToDo implement the logic
-    }
-
-    public boolean isValid(RollbackWithdrawDto rollbackWithdrawDto) {
-        return true; //ToDo implement the logic
-    }
-
     @Transactional
     public void rollbackWithdraw(RollbackWithdrawDto rollbackWithdrawDto) {
-        waitSomeMoments();
+        Utils.waitSomeMoments();
 
         Transaction withdarwTransaction = transactionRepository
                 .findByTrackingCode(rollbackWithdrawDto.getTrackingCode()).orElseThrow();
@@ -103,10 +92,5 @@ public class ReadWriteLockAccountServiceImpl implements AccountService {
 
         account.setBalance(account.getBalance() + rollbackWithdrawTransaction.getAmount());
         accountRepository.save(account);
-    }
-
-    @SneakyThrows
-    public void waitSomeMoments() {
-        TimeUnit.SECONDS.sleep(new Random().nextInt(MINIMUM_SLEEP_SECONDS, MAXIMUM_SLEEP_SECONDS));
     }
 }

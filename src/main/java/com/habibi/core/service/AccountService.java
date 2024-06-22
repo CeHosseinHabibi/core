@@ -5,7 +5,6 @@ import com.habibi.core.dto.RollbackWithdrawDto;
 import com.habibi.core.dto.WithdrawDto;
 import com.habibi.core.dto.WithdrawResponseDto;
 import com.habibi.core.exceptions.InsufficientFundsException;
-import lombok.SneakyThrows;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -17,13 +16,14 @@ public interface AccountService {
 
     Long save();
 
-    boolean isValid(WithdrawDto withdrawDto);
+    default boolean isValid(WithdrawDto withdrawDto) {
+        return true; //ToDo implement the logic
+    }
 
-    boolean isValid(RollbackWithdrawDto rollbackWithdrawDto);
+    default boolean isValid(RollbackWithdrawDto rollbackWithdrawDto) {
+        return true; //ToDo implement the logic
+    }
 
     @Transactional
     void rollbackWithdraw(RollbackWithdrawDto rollbackWithdrawDto);
-
-    @SneakyThrows
-    void waitSomeMoments();
 }

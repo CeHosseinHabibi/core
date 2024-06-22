@@ -28,7 +28,6 @@ public class TransactionalAccountServiceImpl {
     private TransactionService transactionService;
     private MessageSource messageSource;
 
-
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public UUID withdraw(WithdrawDto withdrawDto) throws InsufficientFundsException {
         Account account = accountRepository.findByAccountId(withdrawDto.getAccountId()).orElseThrow();//todo handle exception
