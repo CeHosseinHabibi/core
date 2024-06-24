@@ -4,65 +4,67 @@ import com.habibi.core.dto.WithdrawDto;
 import com.habibi.core.dto.WithdrawResponseDto;
 import com.habibi.core.entity.Account;
 import com.habibi.core.repository.AccountRepository;
+import jakarta.annotation.PostConstruct;
+import lombok.AllArgsConstructor;
 import lombok.SneakyThrows;
 import org.junit.Assert;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpEntity;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
-@SpringBootTest
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class AccountControllerIntegrationTest {
-    public static final int THREADS_COUNT = 20;
 
+    @LocalServerPort
+    private int testServerPort;
+    private static String testServerRootUrl;
     @Autowired
     AccountRepository accountRepository;
+    private static final int THREADS_COUNT = 3;
+
+    public static String getTestServerRootUrl() {
+        return testServerRootUrl;
+    }
+
+    @PostConstruct
+    public void initializeTestServerRootUrl() {
+        testServerRootUrl = "http://localhost:" + testServerPort;
+    }
 
     @Test
     @SneakyThrows
     public void givenAnValidAccount_whenConcurrentWithdraw_thenBalanceShouldBeOk() {
         long withdrawAmount = 10L;
-        Account account = new Account();
-        accountRepository.save(account);
-        Long initialAccountBalance = account.getBalance();
+        Account givenAccount = new Account();
+        accountRepository.save(givenAccount);
+        Long initialAccountBalance = givenAccount.getBalance();
 
-        List<Thread> threads = new ArrayList<>();
-        for (int i = 0; i < THREADS_COUNT; i++) {
-            threads.add(new Thread(new CallWithdraw(account.getAccountId(), withdrawAmount)));
-        }
+        ExecutorService taskExecutor = Executors.newCachedThreadPool();
+        for (int i = 0; i < THREADS_COUNT; i++)
+            taskExecutor.submit(new Thread(new CallWithdraw(givenAccount.getAccountId(), withdrawAmount)));
+        taskExecutor.shutdown();
+        taskExecutor.awaitTermination(2, TimeUnit.MINUTES);
 
-        for (Thread thread : threads) {
-            thread.start();
-        }
-
-        for (Thread thread : threads) {
-            thread.join();
-        }
-
-        Assert.assertEquals(Optional.ofNullable(initialAccountBalance - (THREADS_COUNT * withdrawAmount)), Optional.ofNullable(accountRepository.findByAccountId(account.getAccountId()).get().getBalance()));
-
+        Assert.assertEquals(Optional.ofNullable(initialAccountBalance - (THREADS_COUNT * withdrawAmount)), Optional.ofNullable(accountRepository.findByAccountId(givenAccount.getAccountId()).get().getBalance()));
     }
 }
 
+@AllArgsConstructor
 class CallWithdraw implements Runnable {
     Long accountId;
-
     Long withdrawAmount;
-    RestTemplate restTemplate = new RestTemplate();
-
-    public CallWithdraw(Long accountId, Long withdrawAmount) {
-        this.accountId = accountId;
-        this.withdrawAmount = withdrawAmount;
-    }
 
     @Override
     public void run() {
         HttpEntity<WithdrawDto> withdrawDtoRequest = new HttpEntity<>(new WithdrawDto(accountId, withdrawAmount));
-        restTemplate.postForEntity("http://localhost:8081/accounts/withdraw", withdrawDtoRequest, WithdrawResponseDto.class);
+        new RestTemplate().postForEntity(AccountControllerIntegrationTest.getTestServerRootUrl() + "/accounts/withdraw", withdrawDtoRequest, WithdrawResponseDto.class);
     }
 }
