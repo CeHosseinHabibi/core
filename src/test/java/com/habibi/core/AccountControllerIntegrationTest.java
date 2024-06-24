@@ -49,16 +49,17 @@ class AccountControllerIntegrationTest {
 
         ExecutorService taskExecutor = Executors.newCachedThreadPool();
         for (int i = 0; i < THREADS_COUNT; i++)
-            taskExecutor.submit(new Thread(new CallWithdraw(givenAccount.getAccountId(), withdrawAmount)));
+            taskExecutor.execute(new Thread(new WithdrawTask(givenAccount.getAccountId(), withdrawAmount)));
         taskExecutor.shutdown();
-        taskExecutor.awaitTermination(2, TimeUnit.MINUTES);
+        boolean isExecutorTerminatedNormally = taskExecutor.awaitTermination(2, TimeUnit.MINUTES);
 
+        Assert.assertTrue(isExecutorTerminatedNormally);
         Assert.assertEquals(Optional.ofNullable(initialAccountBalance - (THREADS_COUNT * withdrawAmount)), Optional.ofNullable(accountRepository.findByAccountId(givenAccount.getAccountId()).get().getBalance()));
     }
 }
 
 @AllArgsConstructor
-class CallWithdraw implements Runnable {
+class WithdrawTask implements Runnable {
     Long accountId;
     Long withdrawAmount;
 
