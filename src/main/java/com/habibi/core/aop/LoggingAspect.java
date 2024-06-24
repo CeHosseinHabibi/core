@@ -26,10 +26,10 @@ public class LoggingAspect {
     @Around(value = "publicMethodOfControllerPackage() || publicMethodOfServicePackage()")
     public Object logAround(ProceedingJoinPoint joinPoint) throws Throwable {
         Object[] args = joinPoint.getArgs();
-        String methodName = joinPoint.getSignature().getName();
-        logger.info("Thread \"" + Thread.currentThread().getId() + "\" Entered in \"{}()\" with \"{}\" input", methodName, Arrays.toString(args));
+        String methodName = joinPoint.getSignature().toShortString();
+        logger.info("Thread \"" + Thread.currentThread().getId() + "\" Entered in \"{}\" with \"{}\" input", methodName, Arrays.toString(args));
         Object result = joinPoint.proceed();
-        logger.info("Thread \"" + Thread.currentThread().getId() + "\" Exited from \"{}()\" with \"{}\" output", methodName, result);
+        logger.info("Thread \"" + Thread.currentThread().getId() + "\" Exited from \"{}\" with \"{}\" output", methodName, result);
         return result;
     }
 }
