@@ -3,7 +3,6 @@ package com.habibi.core.service;
 import com.habibi.core.dto.AccountDto;
 import com.habibi.core.dto.RollbackWithdrawDto;
 import com.habibi.core.dto.WithdrawDto;
-import com.habibi.core.dto.WithdrawResponseDto;
 import com.habibi.core.entity.Account;
 import com.habibi.core.entity.Transaction;
 import com.habibi.core.enums.TransactionStatus;
@@ -22,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.UUID;
 
 @Service
 @AllArgsConstructor
@@ -36,7 +36,7 @@ public class OptimisticAccountServiceImpl implements AccountService {
     private static int threadCount = 0;
 
     @Transactional
-    public WithdrawResponseDto withdraw(WithdrawDto withdrawDto) throws InsufficientFundsException {
+    public UUID withdraw(WithdrawDto withdrawDto) throws InsufficientFundsException {
         Utils.waitSomeMoments();
         Account account = optimisticAccountRepository.findByAccountId(withdrawDto.getAccountId()).orElseThrow();//todo handle exception
         logger.info("Thread.Id --> " + Thread.currentThread().getId() + " read the balance-> " + account.getBalance()
@@ -59,7 +59,7 @@ public class OptimisticAccountServiceImpl implements AccountService {
         withdrawTransaction.setTransactionStatus(TransactionStatus.SUCCESS);
         transactionRepository.save(withdrawTransaction);
         logger.info("Thread.Id --> " + Thread.currentThread().getId() + " D" + ", this-> " + this);
-        return new WithdrawResponseDto(withdrawTransaction.getTrackingCode());
+        return withdrawTransaction.getTrackingCode();
     }
 
     public List<AccountDto> getAll() {

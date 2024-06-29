@@ -3,14 +3,14 @@ package com.habibi.core.service;
 import com.habibi.core.dto.AccountDto;
 import com.habibi.core.dto.RollbackWithdrawDto;
 import com.habibi.core.dto.WithdrawDto;
-import com.habibi.core.dto.WithdrawResponseDto;
 import com.habibi.core.exceptions.InsufficientFundsException;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.UUID;
 
 public interface AccountService {
-    WithdrawResponseDto withdraw(WithdrawDto withdrawDto) throws InsufficientFundsException;
+    UUID withdraw(WithdrawDto withdrawDto) throws InsufficientFundsException;
 
     List<AccountDto> getAll();
 

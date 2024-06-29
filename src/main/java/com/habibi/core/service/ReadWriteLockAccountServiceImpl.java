@@ -3,7 +3,6 @@ package com.habibi.core.service;
 import com.habibi.core.dto.AccountDto;
 import com.habibi.core.dto.RollbackWithdrawDto;
 import com.habibi.core.dto.WithdrawDto;
-import com.habibi.core.dto.WithdrawResponseDto;
 import com.habibi.core.entity.Account;
 import com.habibi.core.entity.Transaction;
 import com.habibi.core.exceptions.InsufficientFundsException;
@@ -38,20 +37,13 @@ public class ReadWriteLockAccountServiceImpl implements AccountService {
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock(true);
 
     @SneakyThrows
-    public WithdrawResponseDto withdraw(WithdrawDto withdrawDto) throws InsufficientFundsException {
+    public UUID withdraw(WithdrawDto withdrawDto) throws InsufficientFundsException {
         Utils.waitSomeMoments();
         boolean isLockAcquired = lock.writeLock().tryLock(10, TimeUnit.SECONDS);
         if (isLockAcquired) {
             logger.info("\n\nThread.Id --> " + Thread.currentThread().getId() + " acquired lock " + "\n");
             try {
-                UUID trackingCode = transactionalAccountServiceImpl.withdraw(withdrawDto);
-
-                if (trackingCode != null) {
-                    return new WithdrawResponseDto(trackingCode);
-                } else {
-                    //throw exception and retry
-                    return null; //this line should be removed after throwing mentioned exception
-                }
+                return transactionalAccountServiceImpl.withdraw(withdrawDto);
             } finally {
                 lock.writeLock().unlock();
                 logger.info("\n\nThread.Id --> " + Thread.currentThread().getId() + " released lock " + "\n");
