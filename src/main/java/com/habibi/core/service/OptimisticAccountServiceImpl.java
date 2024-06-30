@@ -9,6 +9,7 @@ import com.habibi.core.enums.TransactionStatus;
 import com.habibi.core.exceptions.InsufficientFundsException;
 import com.habibi.core.mapper.AccountMapper;
 import com.habibi.core.repository.OptimisticAccountRepository;
+import com.habibi.core.repository.OptimisticTransactionRepository;
 import com.habibi.core.repository.TransactionRepository;
 import com.habibi.core.util.Utils;
 import lombok.AllArgsConstructor;
@@ -30,6 +31,7 @@ public class OptimisticAccountServiceImpl implements AccountService {
     private static final Logger logger = LogManager.getLogger(OptimisticAccountServiceImpl.class);
     private OptimisticAccountRepository optimisticAccountRepository;
     private TransactionRepository transactionRepository;
+    private OptimisticTransactionRepository optimisticTransactionRepository;
     private TransactionService transactionService;
     private final AccountMapper accountMapper;
     private MessageSource messageSource;
@@ -73,24 +75,30 @@ public class OptimisticAccountServiceImpl implements AccountService {
     }
 
     @Transactional
-    public void rollbackWithdraw(RollbackWithdrawDto rollbackWithdrawDto) {
+    public UUID rollbackWithdraw(RollbackWithdrawDto rollbackWithdrawDto) {
         Utils.waitSomeMoments();
 
-        Transaction withdarwTransaction = transactionRepository
+        Transaction withdrawTransaction = optimisticTransactionRepository
                 .findByTrackingCode(rollbackWithdrawDto.getTrackingCode()).orElseThrow();
+        logger.info("\n\nThread.Id --> " + Thread.currentThread().getId() + " read the withdrawTransaction");
+        if (withdrawTransaction.getIsRollbacked())
+            return null; //throw an exception;
 
-        if (withdarwTransaction.getIsRollbacked())
-            return; //throw an exception;
+        Account account = optimisticAccountRepository
+                .findByAccountId(withdrawTransaction.getAccount().getAccountId()).orElseThrow();
+        logger.info("\n\nThread.Id --> " + Thread.currentThread().getId() + " read the account");
 
-        Account account = withdarwTransaction.getAccount();
+        Transaction rollbackWithdrawTransaction = transactionService.createRollbackWithdrawTransaction(account, withdrawTransaction);
+        optimisticTransactionRepository.save(rollbackWithdrawTransaction);
 
-        Transaction rollbackWithdrawTransaction = transactionService.createRollbackWithdrawTransaction(account, withdarwTransaction);
-        transactionRepository.save(rollbackWithdrawTransaction);
+        withdrawTransaction.setIsRollbacked(true);
+        rollbackWithdrawTransaction.setTransactionStatus(TransactionStatus.SUCCESS);
+        logger.info("\n\nThread.Id --> " + Thread.currentThread().getId() + " set rollbackWithdrawTransaction.setIsRollbacked(true)");
 
-        withdarwTransaction.setIsRollbacked(true);
-        transactionRepository.save(withdarwTransaction);
-
-        account.setBalance(account.getBalance() + rollbackWithdrawTransaction.getAmount());
+        account.setBalance(account.getBalance() + withdrawTransaction.getAmount());
         optimisticAccountRepository.save(account);
+        logger.info("\n\nThread.Id --> " + Thread.currentThread().getId() + " optimisticAccountRepository.save(account)");
+
+        return rollbackWithdrawDto.getTrackingCode();
     }
 }

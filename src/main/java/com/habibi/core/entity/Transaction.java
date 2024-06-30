@@ -42,4 +42,6 @@ public class Transaction {
     private UUID trackingCode = UUID.randomUUID();
     private TransactionStatus transactionStatus;
     private String description;
+    @Version
+    private Long version;
 }

@@ -1,5 +1,6 @@
 package com.habibi.core.service;
 
+import com.habibi.core.dto.RollbackWithdrawDto;
 import com.habibi.core.dto.WithdrawDto;
 import com.habibi.core.entity.Account;
 import com.habibi.core.entity.Transaction;
@@ -7,6 +8,7 @@ import com.habibi.core.enums.TransactionStatus;
 import com.habibi.core.exceptions.InsufficientFundsException;
 import com.habibi.core.repository.AccountRepository;
 import com.habibi.core.repository.TransactionRepository;
+import com.habibi.core.util.Utils;
 import lombok.AllArgsConstructor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -49,5 +51,33 @@ public class TransactionalAccountServiceImpl {
 
         withdrawTransaction.setTransactionStatus(TransactionStatus.SUCCESS);
         return withdrawTransaction.getTrackingCode();
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public UUID rollbackWithdraw(RollbackWithdrawDto rollbackWithdrawDto) {
+        Utils.waitSomeMoments();
+
+        Transaction withdrawTransaction = transactionRepository
+                .findByTrackingCode(rollbackWithdrawDto.getTrackingCode()).orElseThrow();
+        logger.info("\n\nThread.Id --> " + Thread.currentThread().getId() + " read the withdrawTransaction");
+
+        if (withdrawTransaction.getIsRollbacked())
+            return null; //throw an exception;
+
+        Account account = withdrawTransaction.getAccount();
+        logger.info("\n\nThread.Id --> " + Thread.currentThread().getId() + " read the account");
+
+        Transaction rollbackWithdrawTransaction = transactionService.createRollbackWithdrawTransaction(account, withdrawTransaction);
+        transactionRepository.save(rollbackWithdrawTransaction);
+
+        withdrawTransaction.setIsRollbacked(true);
+        rollbackWithdrawTransaction.setTransactionStatus(TransactionStatus.SUCCESS);
+        logger.info("\n\nThread.Id --> " + Thread.currentThread().getId() + " set rollbackWithdrawTransaction.setIsRollbacked(true)");
+
+        account.setBalance(account.getBalance() + withdrawTransaction.getAmount());
+        accountRepository.save(account);
+        logger.info("\n\nThread.Id --> " + Thread.currentThread().getId() + " accountRepository.save(account)");
+
+        return rollbackWithdrawDto.getTrackingCode();
     }
 }

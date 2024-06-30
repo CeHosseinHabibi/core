@@ -1,9 +1,6 @@
 package com.habibi.core.controller;
 
-import com.habibi.core.dto.AccountDto;
-import com.habibi.core.dto.RollbackWithdrawDto;
-import com.habibi.core.dto.WithdrawDto;
-import com.habibi.core.dto.WithdrawResponseDto;
+import com.habibi.core.dto.*;
 import com.habibi.core.enums.ErrorCode;
 import com.habibi.core.exceptions.InsufficientFundsException;
 import com.habibi.core.service.AccountService;
@@ -41,11 +38,18 @@ public class AccountController {
     }
 
     @PostMapping("/rollback-withdraw")
-    public void rollbackWithdraw(@RequestBody RollbackWithdrawDto rollbackWithdrawDto) {
+    public ResponseEntity<RollbackWithdrawResponseDto> rollbackWithdraw(@RequestBody RollbackWithdrawDto rollbackWithdrawDto) {
         if (!accountService.isValid(rollbackWithdrawDto))
-            return; //todo throw an exception
+            return null; //todo throw an exception
 
-        accountService.rollbackWithdraw(rollbackWithdrawDto);
+        UUID trackingCode;
+        try {
+            trackingCode = accountService.rollbackWithdraw(rollbackWithdrawDto);
+        } catch (ObjectOptimisticLockingFailureException objectOptimisticLockingFailureException) {
+            trackingCode = accountService.rollbackWithdraw(rollbackWithdrawDto);
+        }
+
+        return ResponseEntity.ok(new RollbackWithdrawResponseDto(trackingCode, NO_ERROR_CODE, NO_DESCRIPTION));
     }
 
     @GetMapping

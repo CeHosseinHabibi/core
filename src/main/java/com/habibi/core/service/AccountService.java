@@ -4,7 +4,6 @@ import com.habibi.core.dto.AccountDto;
 import com.habibi.core.dto.RollbackWithdrawDto;
 import com.habibi.core.dto.WithdrawDto;
 import com.habibi.core.exceptions.InsufficientFundsException;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
@@ -24,6 +23,5 @@ public interface AccountService {
         return true; //ToDo implement the logic
     }
 
-    @Transactional
-    void rollbackWithdraw(RollbackWithdrawDto rollbackWithdrawDto);
+    UUID rollbackWithdraw(RollbackWithdrawDto rollbackWithdrawDto);
 }
