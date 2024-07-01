@@ -28,9 +28,7 @@ public class ReadWriteLockAccountServiceImpl implements AccountService {
     private static final Logger logger = LogManager.getLogger(ReadWriteLockAccountServiceImpl.class);
 
     private TransactionalAccountServiceImpl transactionalAccountServiceImpl;
-    private TransactionService transactionService;
     private AccountRepository accountRepository;
-    private TransactionRepository transactionRepository;
     private final AccountMapper accountMapper;
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock(true);
 

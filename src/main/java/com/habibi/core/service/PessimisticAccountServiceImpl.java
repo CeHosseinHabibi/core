@@ -35,14 +35,12 @@ public class PessimisticAccountServiceImpl implements AccountService {
     private TransactionService transactionService;
     private final AccountMapper accountMapper;
     private MessageSource messageSource;
-    private static int threadCount = 0;
 
     @Transactional
     public UUID withdraw(WithdrawDto withdrawDto) throws InsufficientFundsException {
         Utils.waitSomeMoments();
         Account account = pessimisticAccountRepository.findByAccountId(withdrawDto.getAccountId()).orElseThrow();//todo handle exception
-        logger.info("Thread.Id --> " + Thread.currentThread().getId() + " read the balance-> " + account.getBalance()
-                + ", this-> " + this);
+        logger.info("Thread.Id --> " + Thread.currentThread().getId() + " read the balance-> " + account.getBalance() + "\n");
         if (withdrawDto.getAmount() >= account.getBalance())
             throw new InsufficientFundsException(
                     messageSource.getMessage("insufficient.funds.exception.message", null, Locale.ENGLISH));
@@ -54,8 +52,7 @@ public class PessimisticAccountServiceImpl implements AccountService {
         // and in the method, set withdrawTransaction.setTransactionStatus(TransactionStatus.TIMED_OUT_WITH_CORE);
         account.setBalance(account.getBalance() - withdrawDto.getAmount());
         pessimisticAccountRepository.save(account);
-        logger.info("Thread.Id --> " + Thread.currentThread().getId() + " write the balance-> " + account.getBalance()
-                + ", this-> " + this + " " + (++threadCount) + "\n");
+        logger.info("Thread.Id --> " + Thread.currentThread().getId() + " write the balance-> " + account.getBalance() + "\n");
         withdrawTransaction.setTransactionStatus(TransactionStatus.SUCCESS);
         transactionRepository.save(withdrawTransaction);
         return withdrawTransaction.getTrackingCode();

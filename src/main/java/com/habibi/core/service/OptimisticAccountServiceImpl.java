@@ -35,32 +35,29 @@ public class OptimisticAccountServiceImpl implements AccountService {
     private TransactionService transactionService;
     private final AccountMapper accountMapper;
     private MessageSource messageSource;
-    private static int threadCount = 0;
 
     @Transactional
     public UUID withdraw(WithdrawDto withdrawDto) throws InsufficientFundsException {
         Utils.waitSomeMoments();
         Account account = optimisticAccountRepository.findByAccountId(withdrawDto.getAccountId()).orElseThrow();//todo handle exception
-        logger.info("Thread.Id --> " + Thread.currentThread().getId() + " read the balance-> " + account.getBalance()
-                + ", this-> " + this);
+        logger.info("Thread.Id --> " + Thread.currentThread().getId() + " read the balance-> " + account.getBalance() + "\n");
         if (withdrawDto.getAmount() >= account.getBalance())
             throw new InsufficientFundsException(
                     messageSource.getMessage("insufficient.funds.exception.message", null, Locale.ENGLISH));
 
-        logger.info("Thread.Id --> " + Thread.currentThread().getId() + " A" + ", this-> " + this);
+        logger.info("Thread.Id --> " + Thread.currentThread().getId() + " A");
         Transaction withdrawTransaction = transactionService.createWithdrawTransaction(withdrawDto, account);
         transactionRepository.save(withdrawTransaction);
-        logger.info("Thread.Id --> " + Thread.currentThread().getId() + " B" + ", this-> " + this);
+        logger.info("Thread.Id --> " + Thread.currentThread().getId() + " B");
         //we can call the core service in a method
         // and in the method, set withdrawTransaction.setTransactionStatus(TransactionStatus.TIMED_OUT_WITH_CORE);
         account.setBalance(account.getBalance() - withdrawDto.getAmount());
-        logger.info("Thread.Id --> " + Thread.currentThread().getId() + " C" + ", this-> " + this);
+        logger.info("Thread.Id --> " + Thread.currentThread().getId() + " C");
         optimisticAccountRepository.save(account);
-        logger.info("Thread.Id --> " + Thread.currentThread().getId() + " write the balance-> " + account.getBalance()
-                + ", this-> " + this + " " + (++threadCount) + "\n");
+        logger.info("Thread.Id --> " + Thread.currentThread().getId() + " write the balance-> " + account.getBalance() + "\n");
         withdrawTransaction.setTransactionStatus(TransactionStatus.SUCCESS);
         transactionRepository.save(withdrawTransaction);
-        logger.info("Thread.Id --> " + Thread.currentThread().getId() + " D" + ", this-> " + this);
+        logger.info("Thread.Id --> " + Thread.currentThread().getId() + " D");
         return withdrawTransaction.getTrackingCode();
     }
 
