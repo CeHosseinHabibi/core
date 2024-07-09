@@ -4,7 +4,10 @@ import com.habibi.core.dto.AccountDto;
 import com.habibi.core.dto.RollbackWithdrawDto;
 import com.habibi.core.dto.WithdrawDto;
 import com.habibi.core.entity.Account;
+import com.habibi.core.entity.Transaction;
 import com.habibi.core.exceptions.InsufficientFundsException;
+import com.habibi.core.exceptions.RollbackingTheRollbackedWithdrawException;
+import com.habibi.core.exceptions.WithdrawOfRollbackNotFoundException;
 import com.habibi.core.mapper.AccountMapper;
 import com.habibi.core.repository.AccountRepository;
 import com.habibi.core.util.Utils;
@@ -15,7 +18,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.UUID;
 
 @Service
 @AllArgsConstructor
@@ -27,7 +29,7 @@ public class SynchronizedAccountServiceImpl implements AccountService {
     private AccountRepository accountRepository;
     private final AccountMapper accountMapper;
 
-    public synchronized UUID withdraw(WithdrawDto withdrawDto) throws InsufficientFundsException {
+    public synchronized Transaction withdraw(WithdrawDto withdrawDto) throws InsufficientFundsException {
         Utils.waitSomeMoments();
         return transactionalAccountServiceImpl.withdraw(withdrawDto);
     }
@@ -42,7 +44,8 @@ public class SynchronizedAccountServiceImpl implements AccountService {
         return accountRepository.save(account).getAccountId();
     }
 
-    public synchronized UUID rollbackWithdraw(RollbackWithdrawDto rollbackWithdrawDto) {
+    public synchronized Transaction rollbackWithdraw(RollbackWithdrawDto rollbackWithdrawDto)
+            throws WithdrawOfRollbackNotFoundException, RollbackingTheRollbackedWithdrawException {
         Utils.waitSomeMoments();
         return transactionalAccountServiceImpl.rollbackWithdraw(rollbackWithdrawDto);
     }

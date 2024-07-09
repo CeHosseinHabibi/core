@@ -10,7 +10,6 @@ import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.Parameter;
 
 import java.util.Date;
-import java.util.UUID;
 
 @Entity
 @Table
@@ -36,12 +35,13 @@ public class Transaction {
     private Account account;
     private TransactionType transactionType;
     private Long amount;
-    private Date timestamp;
+    private Date createdAt;
     private Boolean isRollbacked = false;
     private Long rollbackFor;
-    private UUID trackingCode = UUID.randomUUID();
     private TransactionStatus transactionStatus;
     private String description;
     @Version
     private Long version;
+    @Embedded
+    private RequesterEntity requesterEntity;
 }

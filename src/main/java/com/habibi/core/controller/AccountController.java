@@ -1,9 +1,13 @@
 package com.habibi.core.controller;
 
 import com.habibi.core.dto.*;
+import com.habibi.core.entity.Transaction;
 import com.habibi.core.enums.ErrorCode;
 import com.habibi.core.exceptions.InsufficientFundsException;
+import com.habibi.core.exceptions.RollbackingTheRollbackedWithdrawException;
+import com.habibi.core.exceptions.WithdrawOfRollbackNotFoundException;
 import com.habibi.core.service.AccountService;
+import com.habibi.core.util.Utils;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -11,7 +15,6 @@ import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/accounts")
@@ -27,29 +30,30 @@ public class AccountController {
         if (!accountService.isValid(withdrawDto))
             return null; //todo throw an exception
 
-        UUID trackingCode;
+        Transaction withdraw;
         try {
-            trackingCode = accountService.withdraw(withdrawDto);
+            withdraw = accountService.withdraw(withdrawDto);
         } catch (ObjectOptimisticLockingFailureException objectOptimisticLockingFailureException) {
-            trackingCode = accountService.withdraw(withdrawDto);
+            withdraw = accountService.withdraw(withdrawDto);
         }
 
-        return ResponseEntity.ok(new WithdrawResponseDto(trackingCode, NO_ERROR_CODE, NO_DESCRIPTION));
+        return ResponseEntity.ok(new WithdrawResponseDto(Utils.getTransactionDto(withdraw), NO_ERROR_CODE, NO_DESCRIPTION));
     }
 
     @PostMapping("/rollback-withdraw")
-    public ResponseEntity<RollbackWithdrawResponseDto> rollbackWithdraw(@RequestBody RollbackWithdrawDto rollbackWithdrawDto) {
+    public ResponseEntity<RollbackWithdrawResponseDto> rollbackWithdraw(@RequestBody RollbackWithdrawDto rollbackWithdrawDto)
+            throws WithdrawOfRollbackNotFoundException, RollbackingTheRollbackedWithdrawException {
         if (!accountService.isValid(rollbackWithdrawDto))
             return null; //todo throw an exception
 
-        UUID trackingCode;
+        Transaction rollbackWithdraw;
         try {
-            trackingCode = accountService.rollbackWithdraw(rollbackWithdrawDto);
+            rollbackWithdraw = accountService.rollbackWithdraw(rollbackWithdrawDto);
         } catch (ObjectOptimisticLockingFailureException objectOptimisticLockingFailureException) {
-            trackingCode = accountService.rollbackWithdraw(rollbackWithdrawDto);
+            rollbackWithdraw = accountService.rollbackWithdraw(rollbackWithdrawDto);
         }
 
-        return ResponseEntity.ok(new RollbackWithdrawResponseDto(trackingCode, NO_ERROR_CODE, NO_DESCRIPTION));
+        return ResponseEntity.ok(new RollbackWithdrawResponseDto(Utils.getTransactionDto(rollbackWithdraw), NO_ERROR_CODE, NO_DESCRIPTION));
     }
 
     @GetMapping

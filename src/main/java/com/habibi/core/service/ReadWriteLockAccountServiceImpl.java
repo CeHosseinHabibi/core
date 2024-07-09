@@ -4,10 +4,12 @@ import com.habibi.core.dto.AccountDto;
 import com.habibi.core.dto.RollbackWithdrawDto;
 import com.habibi.core.dto.WithdrawDto;
 import com.habibi.core.entity.Account;
+import com.habibi.core.entity.Transaction;
 import com.habibi.core.exceptions.InsufficientFundsException;
+import com.habibi.core.exceptions.RollbackingTheRollbackedWithdrawException;
+import com.habibi.core.exceptions.WithdrawOfRollbackNotFoundException;
 import com.habibi.core.mapper.AccountMapper;
 import com.habibi.core.repository.AccountRepository;
-import com.habibi.core.repository.TransactionRepository;
 import com.habibi.core.util.Utils;
 import lombok.AllArgsConstructor;
 import lombok.SneakyThrows;
@@ -17,7 +19,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -33,7 +34,7 @@ public class ReadWriteLockAccountServiceImpl implements AccountService {
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock(true);
 
     @SneakyThrows
-    public UUID withdraw(WithdrawDto withdrawDto) throws InsufficientFundsException {
+    public Transaction withdraw(WithdrawDto withdrawDto) throws InsufficientFundsException {
         Utils.waitSomeMoments();
         boolean isLockAcquired = lock.writeLock().tryLock(10, TimeUnit.SECONDS);
         if (isLockAcquired) {
@@ -60,10 +61,15 @@ public class ReadWriteLockAccountServiceImpl implements AccountService {
         return accountRepository.save(account).getAccountId();
     }
 
-    @SneakyThrows
-    public UUID rollbackWithdraw(RollbackWithdrawDto rollbackWithdrawDto) {
+    public Transaction rollbackWithdraw(RollbackWithdrawDto rollbackWithdrawDto)
+            throws WithdrawOfRollbackNotFoundException, RollbackingTheRollbackedWithdrawException {
         Utils.waitSomeMoments();
-        boolean isLockAcquired = lock.writeLock().tryLock(10, TimeUnit.SECONDS);
+        boolean isLockAcquired = false;
+        try {
+            isLockAcquired = lock.writeLock().tryLock(10, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            return null;
+        }
         if (isLockAcquired) {
             logger.info("\n\nThread.Id --> " + Thread.currentThread().getId() + " acquired lock " + "\n");
             try {

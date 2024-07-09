@@ -7,6 +7,8 @@ import com.habibi.core.entity.Account;
 import com.habibi.core.entity.Transaction;
 import com.habibi.core.enums.TransactionStatus;
 import com.habibi.core.exceptions.InsufficientFundsException;
+import com.habibi.core.exceptions.RollbackingTheRollbackedWithdrawException;
+import com.habibi.core.exceptions.WithdrawOfRollbackNotFoundException;
 import com.habibi.core.mapper.AccountMapper;
 import com.habibi.core.repository.OptimisticAccountRepository;
 import com.habibi.core.repository.OptimisticTransactionRepository;
@@ -22,7 +24,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Locale;
-import java.util.UUID;
 
 @Service
 @AllArgsConstructor
@@ -37,7 +38,7 @@ public class OptimisticAccountServiceImpl implements AccountService {
     private MessageSource messageSource;
 
     @Transactional
-    public UUID withdraw(WithdrawDto withdrawDto) throws InsufficientFundsException {
+    public Transaction withdraw(WithdrawDto withdrawDto) throws InsufficientFundsException {
         Utils.waitSomeMoments();
         Account account = optimisticAccountRepository.findByAccountId(withdrawDto.getAccountId()).orElseThrow();//todo handle exception
         logger.info("Thread.Id --> " + Thread.currentThread().getId() + " read the balance-> " + account.getBalance() + "\n");
@@ -58,7 +59,7 @@ public class OptimisticAccountServiceImpl implements AccountService {
         withdrawTransaction.setTransactionStatus(TransactionStatus.SUCCESS);
         transactionRepository.save(withdrawTransaction);
         logger.info("Thread.Id --> " + Thread.currentThread().getId() + " D");
-        return withdrawTransaction.getTrackingCode();
+        return withdrawTransaction;
     }
 
     public List<AccountDto> getAll() {
@@ -72,14 +73,18 @@ public class OptimisticAccountServiceImpl implements AccountService {
     }
 
     @Transactional
-    public UUID rollbackWithdraw(RollbackWithdrawDto rollbackWithdrawDto) {
+    public Transaction rollbackWithdraw(RollbackWithdrawDto rollbackWithdrawDto)
+            throws WithdrawOfRollbackNotFoundException, RollbackingTheRollbackedWithdrawException {
         Utils.waitSomeMoments();
 
         Transaction withdrawTransaction = optimisticTransactionRepository
-                .findByTrackingCode(rollbackWithdrawDto.getTrackingCode()).orElseThrow();
+                .findByRequesterEntity(Utils.getRequesterEntity(rollbackWithdrawDto.getRequesterDto()))
+                .orElseThrow(() -> new WithdrawOfRollbackNotFoundException(
+                        messageSource.getMessage("not.found.exception.message", null, Locale.ENGLISH)));
         logger.info("\n\nThread.Id --> " + Thread.currentThread().getId() + " read the withdrawTransaction");
         if (withdrawTransaction.getIsRollbacked())
-            return null; //throw an exception;
+            throw new RollbackingTheRollbackedWithdrawException(
+                    messageSource.getMessage("rollbacking.the.rollbacked.withdraw.exception.message", null, Locale.ENGLISH));
 
         Account account = optimisticAccountRepository
                 .findByAccountId(withdrawTransaction.getAccount().getAccountId()).orElseThrow();
@@ -96,6 +101,6 @@ public class OptimisticAccountServiceImpl implements AccountService {
         optimisticAccountRepository.save(account);
         logger.info("\n\nThread.Id --> " + Thread.currentThread().getId() + " optimisticAccountRepository.save(account)");
 
-        return rollbackWithdrawDto.getTrackingCode();
+        return rollbackWithdrawTransaction;
     }
 }

@@ -6,6 +6,7 @@ import com.habibi.core.entity.Transaction;
 import com.habibi.core.enums.TransactionStatus;
 import com.habibi.core.enums.TransactionType;
 import com.habibi.core.repository.TransactionRepository;
+import com.habibi.core.util.Utils;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -22,8 +23,9 @@ public class TransactionService {
         transaction.setAccount(account);
         transaction.setTransactionType(TransactionType.WITHDRAW);
         transaction.setAmount(withdrawDto.getAmount());
-        transaction.setTimestamp(new Date());
+        transaction.setCreatedAt(new Date());
         transaction.setTransactionStatus(TransactionStatus.CREATED);
+        transaction.setRequesterEntity(Utils.getRequesterEntity(withdrawDto.getRequesterDto()));
         return transaction;
     }
 
@@ -31,7 +33,7 @@ public class TransactionService {
         Transaction rollbackTransaction = new Transaction();
         rollbackTransaction.setAccount(account);
         rollbackTransaction.setTransactionType(TransactionType.ROLLBACK_FOR_WITHDRAW);
-        rollbackTransaction.setTimestamp(new Date());
+        rollbackTransaction.setCreatedAt(new Date());
         rollbackTransaction.setRollbackFor(withdarwTransaction.getTransactionId());
 
         return rollbackTransaction;

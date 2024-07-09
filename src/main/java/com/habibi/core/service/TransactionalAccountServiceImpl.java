@@ -6,6 +6,8 @@ import com.habibi.core.entity.Account;
 import com.habibi.core.entity.Transaction;
 import com.habibi.core.enums.TransactionStatus;
 import com.habibi.core.exceptions.InsufficientFundsException;
+import com.habibi.core.exceptions.RollbackingTheRollbackedWithdrawException;
+import com.habibi.core.exceptions.WithdrawOfRollbackNotFoundException;
 import com.habibi.core.repository.AccountRepository;
 import com.habibi.core.repository.TransactionRepository;
 import com.habibi.core.util.Utils;
@@ -18,7 +20,6 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Locale;
-import java.util.UUID;
 
 @Service
 @AllArgsConstructor
@@ -31,7 +32,7 @@ public class TransactionalAccountServiceImpl {
     private MessageSource messageSource;
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public UUID withdraw(WithdrawDto withdrawDto) throws InsufficientFundsException {
+    public Transaction withdraw(WithdrawDto withdrawDto) throws InsufficientFundsException {
         Account account = accountRepository.findByAccountId(withdrawDto.getAccountId()).orElseThrow();//todo handle exception
         logger.info("\n\nThread.Id --> " + Thread.currentThread().getId() + " read the balance-> " + account.getBalance()
                 + ", this-> " + this + "\n");
@@ -50,19 +51,23 @@ public class TransactionalAccountServiceImpl {
                 + ", this-> " + this + "\n");
 
         withdrawTransaction.setTransactionStatus(TransactionStatus.SUCCESS);
-        return withdrawTransaction.getTrackingCode();
+        return withdrawTransaction;
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public UUID rollbackWithdraw(RollbackWithdrawDto rollbackWithdrawDto) {
+    public Transaction rollbackWithdraw(RollbackWithdrawDto rollbackWithdrawDto)
+            throws WithdrawOfRollbackNotFoundException, RollbackingTheRollbackedWithdrawException {
         Utils.waitSomeMoments();
 
         Transaction withdrawTransaction = transactionRepository
-                .findByTrackingCode(rollbackWithdrawDto.getTrackingCode()).orElseThrow();
+                .findByRequesterEntity(Utils.getRequesterEntity(rollbackWithdrawDto.getRequesterDto()))
+                .orElseThrow(() -> new WithdrawOfRollbackNotFoundException(
+                        messageSource.getMessage("not.found.exception.message", null, Locale.ENGLISH)));
         logger.info("\n\nThread.Id --> " + Thread.currentThread().getId() + " read the withdrawTransaction");
 
         if (withdrawTransaction.getIsRollbacked())
-            return null; //throw an exception;
+            throw new RollbackingTheRollbackedWithdrawException(
+                    messageSource.getMessage("rollbacking.the.rollbacked.withdraw.exception.message", null, Locale.ENGLISH));
 
         Account account = withdrawTransaction.getAccount();
         logger.info("\n\nThread.Id --> " + Thread.currentThread().getId() + " read the account");
@@ -78,6 +83,6 @@ public class TransactionalAccountServiceImpl {
         accountRepository.save(account);
         logger.info("\n\nThread.Id --> " + Thread.currentThread().getId() + " accountRepository.save(account)");
 
-        return rollbackWithdrawDto.getTrackingCode();
+        return rollbackWithdrawTransaction;
     }
 }

@@ -5,13 +5,11 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.UUID;
-
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class RollbackWithdrawResponseDto {
-    private UUID trackingCode;
+    private TransactionDto transactionDto;
     private ErrorCode errorCode;
     private String description;
 }

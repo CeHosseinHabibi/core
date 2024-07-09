@@ -10,4 +10,5 @@ import lombok.NoArgsConstructor;
 public class WithdrawDto {
     private Long accountId;
     private Long amount;
+    private RequesterDto requesterDto;
 }
