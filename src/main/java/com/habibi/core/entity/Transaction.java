@@ -12,7 +12,7 @@ import org.hibernate.annotations.Parameter;
 import java.util.Date;
 
 @Entity
-@Table
+@Table(uniqueConstraints = @UniqueConstraint(columnNames = {"REQUESTED_AT", "USER_NATIONAL_CODE"}))
 @Data
 @AllArgsConstructor
 @NoArgsConstructor

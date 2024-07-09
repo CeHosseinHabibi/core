@@ -1,9 +1,6 @@
 package com.habibi.core;
 
-import com.habibi.core.dto.RollbackWithdrawResponseDto;
-import com.habibi.core.dto.RollbackWithdrawDto;
-import com.habibi.core.dto.WithdrawDto;
-import com.habibi.core.dto.WithdrawResponseDto;
+import com.habibi.core.dto.*;
 import com.habibi.core.entity.Account;
 import com.habibi.core.repository.AccountRepository;
 import jakarta.annotation.PostConstruct;
@@ -18,8 +15,11 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -52,9 +52,16 @@ class AccountControllerIntegrationTest {
         accountRepository.save(givenAccount);
         Long initialAccountBalance = givenAccount.getBalance();
 
+        String givenUserNationalCode = "111";
+        Date givenBaseTime = new Date();
+        List<RequesterDto> givenRequesterDtos = new ArrayList<>();
+        for (int i = 0; i < THREADS_COUNT; i++)
+            givenRequesterDtos.add(new RequesterDto(Date.from(givenBaseTime.toInstant().plus(i, ChronoUnit.SECONDS)),
+                    givenUserNationalCode));
+
         ExecutorService taskExecutor = Executors.newCachedThreadPool();
         for (int i = 0; i < THREADS_COUNT; i++)
-            taskExecutor.submit(new WithdrawTask(givenAccount.getAccountId(), withdrawAmount));
+            taskExecutor.submit(new WithdrawTask(givenAccount.getAccountId(), withdrawAmount, givenRequesterDtos.get(i)));
         taskExecutor.shutdown();
         boolean isExecutorTerminatedNormally = taskExecutor.awaitTermination(2, TimeUnit.MINUTES);
 
@@ -71,12 +78,15 @@ class AccountControllerIntegrationTest {
         accountRepository.save(givenAccount);
         Long initialAccountBalance = givenAccount.getBalance();
 
-        WithdrawTask givenWithdrawTask = new WithdrawTask(givenAccount.getAccountId(), withdrawAmount);
+        String givenUserNationalCode = "111";
+        RequesterDto givenRequesterDto = new RequesterDto(new Date(), givenUserNationalCode);
+
+        WithdrawTask givenWithdrawTask = new WithdrawTask(givenAccount.getAccountId(), withdrawAmount, givenRequesterDto);
         WithdrawResponseDto givenWithdrawResponseDto = givenWithdrawTask.call();
 
         ExecutorService taskExecutor = Executors.newCachedThreadPool();
         for (int i = 0; i < THREADS_COUNT; i++)
-            taskExecutor.submit(new RollbackWithdrawTask(givenWithdrawResponseDto.getTrackingCode()));
+            taskExecutor.submit(new RollbackWithdrawTask(givenWithdrawResponseDto.getTransactionDto().getRequesterDto()));
         taskExecutor.shutdown();
         boolean isExecutorTerminatedNormally = taskExecutor.awaitTermination(2, TimeUnit.MINUTES);
 
@@ -91,10 +101,11 @@ class AccountControllerIntegrationTest {
 class WithdrawTask implements Callable<WithdrawResponseDto> {
     Long accountId;
     Long withdrawAmount;
+    RequesterDto requesterDto;
 
     @Override
     public WithdrawResponseDto call() {
-        HttpEntity<WithdrawDto> withdrawRequestDto = new HttpEntity<>(new WithdrawDto(accountId, withdrawAmount));
+        HttpEntity<WithdrawDto> withdrawRequestDto = new HttpEntity<>(new WithdrawDto(accountId, withdrawAmount, requesterDto));
         ResponseEntity<WithdrawResponseDto> withdrawResponseDto = new RestTemplate()
                 .postForEntity(AccountControllerIntegrationTest.getTestServerRootUrl() + "/accounts/withdraw",
                         withdrawRequestDto, WithdrawResponseDto.class);
@@ -104,11 +115,11 @@ class WithdrawTask implements Callable<WithdrawResponseDto> {
 
 @AllArgsConstructor
 class RollbackWithdrawTask implements Callable<RollbackWithdrawResponseDto> {
-    private UUID trackingCode;
+    private RequesterDto requesterDto;
 
     @Override
     public RollbackWithdrawResponseDto call() {
-        HttpEntity<RollbackWithdrawDto> rollbackWithdrawRequestDto = new HttpEntity<>(new RollbackWithdrawDto(trackingCode));
+        HttpEntity<RollbackWithdrawDto> rollbackWithdrawRequestDto = new HttpEntity<>(new RollbackWithdrawDto(requesterDto));
         ResponseEntity<RollbackWithdrawResponseDto> rollbackWithdrawResponseDto = new RestTemplate()
                 .postForEntity(AccountControllerIntegrationTest.getTestServerRootUrl() + "/accounts/rollback-withdraw"
                         , rollbackWithdrawRequestDto, RollbackWithdrawResponseDto.class);

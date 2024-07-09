@@ -28,14 +28,20 @@ public class SynchronizedAccountServiceImpl implements AccountService {
     private TransactionalAccountServiceImpl transactionalAccountServiceImpl;
     private AccountRepository accountRepository;
     private final AccountMapper accountMapper;
+    private final Object lock = new Object();
 
-    public synchronized Transaction withdraw(WithdrawDto withdrawDto) throws InsufficientFundsException {
+    public Transaction withdraw(WithdrawDto withdrawDto) throws InsufficientFundsException {
         Utils.waitSomeMoments();
-        return transactionalAccountServiceImpl.withdraw(withdrawDto);
+        synchronized (lock) {
+            return transactionalAccountServiceImpl.withdraw(withdrawDto);
+        }
     }
 
     public List<AccountDto> getAll() {
-        List<Account> accounts = accountRepository.findAll().stream().toList();
+        List<Account> accounts;
+        synchronized (lock) {
+            accounts = accountRepository.findAll().stream().toList();
+        }
         return accountMapper.accountsToAccountDtos(accounts);
     }
 
@@ -44,9 +50,11 @@ public class SynchronizedAccountServiceImpl implements AccountService {
         return accountRepository.save(account).getAccountId();
     }
 
-    public synchronized Transaction rollbackWithdraw(RollbackWithdrawDto rollbackWithdrawDto)
+    public Transaction rollbackWithdraw(RollbackWithdrawDto rollbackWithdrawDto)
             throws WithdrawOfRollbackNotFoundException, RollbackingTheRollbackedWithdrawException {
         Utils.waitSomeMoments();
-        return transactionalAccountServiceImpl.rollbackWithdraw(rollbackWithdrawDto);
+        synchronized (lock) {
+            return transactionalAccountServiceImpl.rollbackWithdraw(rollbackWithdrawDto);
+        }
     }
 }
