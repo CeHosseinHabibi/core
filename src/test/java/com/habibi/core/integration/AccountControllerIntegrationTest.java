@@ -1,4 +1,4 @@
-package com.habibi.core;
+package com.habibi.core.integration;
 
 import com.habibi.core.dto.*;
 import com.habibi.core.entity.Account;
@@ -33,7 +33,7 @@ class AccountControllerIntegrationTest {
     private static String testServerRootUrl;
     @Autowired
     AccountRepository accountRepository;
-    private static final int THREADS_COUNT = 3;
+    private static final int THREADS_COUNT = 30;
 
     public static String getTestServerRootUrl() {
         return testServerRootUrl;
