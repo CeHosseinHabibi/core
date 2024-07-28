@@ -23,7 +23,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.MessageSource;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -54,7 +54,7 @@ public class OptimisticAccountServiceImplTest {
         Account givenAccount = new Account();
         givenAccount.setAccountId(givenAccountId);
         Transaction givenWithdrawTransaction = new Transaction();
-        WithdrawDto givenWithdrawDto = new WithdrawDto(givenAccountId, givenWithdrawAmount, new RequesterDto(new Date(),
+        WithdrawDto givenWithdrawDto = new WithdrawDto(givenAccountId, givenWithdrawAmount, new RequesterDto(LocalDateTime.now(),
                 givenUserNationalCode));
 
         when(optimisticAccountRepository.findByAccountId(givenAccountId)).thenReturn(Optional.of(givenAccount));
@@ -73,7 +73,7 @@ public class OptimisticAccountServiceImplTest {
         Account givenAccount = new Account();
         givenAccount.setAccountId(givenAccountId);
         WithdrawDto givenWithdrawDto = new WithdrawDto(givenAccountId, givenAccount.getBalance() + 1,
-                new RequesterDto(new Date(), givenNationalCode));
+                new RequesterDto(LocalDateTime.now(), givenNationalCode));
 
         when(optimisticAccountRepository.findByAccountId(givenAccountId)).thenReturn(Optional.of(givenAccount));
 

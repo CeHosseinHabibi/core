@@ -6,7 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 
 @Embeddable
 @Getter
@@ -14,6 +14,6 @@ import java.util.Date;
 @NoArgsConstructor
 @AllArgsConstructor
 public class RequesterEntity {
-    private Date requestedAt;
+    private LocalDateTime requestedAt;
     private String userNationalCode;
 }

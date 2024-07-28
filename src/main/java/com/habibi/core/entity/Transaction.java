@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.Parameter;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(uniqueConstraints = @UniqueConstraint(columnNames = {"REQUESTED_AT", "USER_NATIONAL_CODE"}))
@@ -35,7 +35,7 @@ public class Transaction {
     private Account account;
     private TransactionType transactionType;
     private Long amount;
-    private Date createdAt;
+    private LocalDateTime createdAt;
     private Boolean isRollbacked = false;
     private Long rollbackFor;
     private TransactionStatus transactionStatus;

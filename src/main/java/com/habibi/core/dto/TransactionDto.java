@@ -7,7 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor
@@ -17,7 +17,7 @@ public class TransactionDto {
     private Long transactionId;
     private TransactionType transactionType;
     private Long amount;
-    private Date createdAt;
+    private LocalDateTime createdAt;
     private Boolean isRollbacked;
     private Long rollbackFor;
     private TransactionStatus transactionStatus;

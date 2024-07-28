@@ -10,7 +10,7 @@ import com.habibi.core.util.Utils;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -23,7 +23,7 @@ public class TransactionService {
         transaction.setAccount(account);
         transaction.setTransactionType(TransactionType.WITHDRAW);
         transaction.setAmount(withdrawDto.getAmount());
-        transaction.setCreatedAt(new Date());
+        transaction.setCreatedAt(LocalDateTime.now());
         transaction.setTransactionStatus(TransactionStatus.CREATED);
         transaction.setRequesterEntity(Utils.getRequesterEntity(withdrawDto.getRequesterDto()));
         return transaction;
@@ -33,7 +33,7 @@ public class TransactionService {
         Transaction rollbackTransaction = new Transaction();
         rollbackTransaction.setAccount(account);
         rollbackTransaction.setTransactionType(TransactionType.ROLLBACK_FOR_WITHDRAW);
-        rollbackTransaction.setCreatedAt(new Date());
+        rollbackTransaction.setCreatedAt(LocalDateTime.now());
         rollbackTransaction.setRollbackFor(withdarwTransaction.getTransactionId());
 
         return rollbackTransaction;

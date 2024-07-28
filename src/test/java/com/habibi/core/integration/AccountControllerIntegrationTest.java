@@ -15,9 +15,9 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Callable;
@@ -53,10 +53,10 @@ class AccountControllerIntegrationTest {
         Long initialAccountBalance = givenAccount.getBalance();
 
         String givenUserNationalCode = "111";
-        Date givenBaseTime = new Date();
+        LocalDateTime givenBaseTime = LocalDateTime.now();
         List<RequesterDto> givenRequesterDtos = new ArrayList<>();
         for (int i = 0; i < THREADS_COUNT; i++)
-            givenRequesterDtos.add(new RequesterDto(Date.from(givenBaseTime.toInstant().plus(i, ChronoUnit.SECONDS)),
+            givenRequesterDtos.add(new RequesterDto(givenBaseTime.plus(i, ChronoUnit.SECONDS),
                     givenUserNationalCode));
 
         ExecutorService taskExecutor = Executors.newCachedThreadPool();
@@ -79,7 +79,7 @@ class AccountControllerIntegrationTest {
         Long initialAccountBalance = givenAccount.getBalance();
 
         String givenUserNationalCode = "111";
-        RequesterDto givenRequesterDto = new RequesterDto(new Date(), givenUserNationalCode);
+        RequesterDto givenRequesterDto = new RequesterDto(LocalDateTime.now(), givenUserNationalCode);
 
         WithdrawTask givenWithdrawTask = new WithdrawTask(givenAccount.getAccountId(), withdrawAmount, givenRequesterDto);
         WithdrawResponseDto givenWithdrawResponseDto = givenWithdrawTask.call();
