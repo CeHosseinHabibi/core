@@ -40,8 +40,6 @@ public class OptimisticAccountServiceImplTest {
     TransactionRepository transactionRepository;
     @Mock
     OptimisticTransactionRepository optimisticTransactionRepository;
-    @Mock
-    MessageSource messageSource;
     @InjectMocks
     OptimisticAccountServiceImpl optimisticAccountService;
 

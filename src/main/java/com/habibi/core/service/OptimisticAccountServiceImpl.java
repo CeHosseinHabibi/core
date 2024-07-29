@@ -18,12 +18,10 @@ import lombok.AllArgsConstructor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Locale;
 
 @Service
 @AllArgsConstructor
@@ -35,7 +33,6 @@ public class OptimisticAccountServiceImpl implements AccountService {
     private OptimisticTransactionRepository optimisticTransactionRepository;
     private TransactionService transactionService;
     private final AccountMapper accountMapper;
-    private MessageSource messageSource;
 
     @Transactional
     public Transaction withdraw(WithdrawDto withdrawDto) throws InsufficientFundsException {
@@ -43,8 +40,7 @@ public class OptimisticAccountServiceImpl implements AccountService {
         Account account = optimisticAccountRepository.findByAccountId(withdrawDto.getAccountId()).orElseThrow();//todo handle exception
         logger.info("Thread.Id --> " + Thread.currentThread().getId() + " read the balance-> " + account.getBalance() + "\n");
         if (withdrawDto.getAmount() >= account.getBalance())
-            throw new InsufficientFundsException(
-                    messageSource.getMessage("insufficient.funds.exception.message", null, Locale.ENGLISH));
+            throw new InsufficientFundsException();
 
         logger.info("Thread.Id --> " + Thread.currentThread().getId() + " A");
         Transaction withdrawTransaction = transactionService.createWithdrawTransaction(withdrawDto, account);
@@ -79,12 +75,10 @@ public class OptimisticAccountServiceImpl implements AccountService {
 
         Transaction withdrawTransaction = optimisticTransactionRepository
                 .findByRequesterEntity(Utils.getRequesterEntity(rollbackWithdrawDto.getRequesterDto()))
-                .orElseThrow(() -> new WithdrawOfRollbackNotFoundException(
-                        messageSource.getMessage("not.found.exception.message", null, Locale.ENGLISH)));
+                .orElseThrow(() -> new WithdrawOfRollbackNotFoundException());
         logger.info("\n\nThread.Id --> " + Thread.currentThread().getId() + " read the withdrawTransaction");
         if (withdrawTransaction.getIsRollbacked())
-            throw new RollbackingTheRollbackedWithdrawException(
-                    messageSource.getMessage("rollbacking.the.rollbacked.withdraw.exception.message", null, Locale.ENGLISH));
+            throw new RollbackingTheRollbackedWithdrawException();
 
         Account account = optimisticAccountRepository
                 .findByAccountId(withdrawTransaction.getAccount().getAccountId()).orElseThrow();

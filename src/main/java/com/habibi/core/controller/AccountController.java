@@ -20,9 +20,6 @@ import java.util.List;
 @RequestMapping("/accounts")
 @AllArgsConstructor
 public class AccountController {
-
-    private final ErrorCode NO_ERROR_CODE = null;
-    private final String NO_DESCRIPTION = "";
     private AccountService accountService;
 
     @PostMapping("/withdraw")
@@ -37,7 +34,7 @@ public class AccountController {
             withdraw = accountService.withdraw(withdrawDto);
         }
 
-        return ResponseEntity.ok(new WithdrawResponseDto(Utils.getTransactionDto(withdraw), NO_ERROR_CODE, NO_DESCRIPTION));
+        return ResponseEntity.ok(new WithdrawResponseDto(Utils.getTransactionDto(withdraw)));
     }
 
     @PostMapping("/rollback-withdraw")
@@ -53,7 +50,7 @@ public class AccountController {
             rollbackWithdraw = accountService.rollbackWithdraw(rollbackWithdrawDto);
         }
 
-        return ResponseEntity.ok(new RollbackWithdrawResponseDto(Utils.getTransactionDto(rollbackWithdraw), NO_ERROR_CODE, NO_DESCRIPTION));
+        return ResponseEntity.ok(new RollbackWithdrawResponseDto(Utils.getTransactionDto(rollbackWithdraw)));
     }
 
     @GetMapping

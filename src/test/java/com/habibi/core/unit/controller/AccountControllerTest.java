@@ -7,7 +7,6 @@ import com.habibi.core.dto.RollbackWithdrawResponseDto;
 import com.habibi.core.dto.WithdrawDto;
 import com.habibi.core.dto.WithdrawResponseDto;
 import com.habibi.core.entity.Transaction;
-import com.habibi.core.enums.ErrorCode;
 import com.habibi.core.service.AccountService;
 import com.habibi.core.util.Utils;
 import lombok.SneakyThrows;
@@ -32,8 +31,6 @@ public class AccountControllerTest {
     AccountService accountService;
     @InjectMocks
     AccountController accountController;
-    private final ErrorCode NO_ERROR_CODE = null;
-    private final String NO_DESCRIPTION = "";
 
     @SneakyThrows
     @Test
@@ -43,7 +40,7 @@ public class AccountControllerTest {
         WithdrawDto withdrawDto = new WithdrawDto();
         withdrawDto.setAccountId(1L);
         WithdrawResponseDto withdrawResponseDto =
-                new WithdrawResponseDto(Utils.getTransactionDto(withdraw), NO_ERROR_CODE, NO_DESCRIPTION);
+                new WithdrawResponseDto(Utils.getTransactionDto(withdraw));
 
         when(accountService.isValid(any(WithdrawDto.class))).thenReturn(true);
         when(accountService.withdraw(any(WithdrawDto.class))).thenReturn(withdraw);
@@ -60,7 +57,7 @@ public class AccountControllerTest {
         Transaction rollbackWithdraw = new Transaction();
         RollbackWithdrawDto rollbackWithdrawDto = new RollbackWithdrawDto();
         RollbackWithdrawResponseDto rollbackWithdrawResponseDto =
-                new RollbackWithdrawResponseDto(Utils.getTransactionDto(rollbackWithdraw), NO_ERROR_CODE, NO_DESCRIPTION);
+                new RollbackWithdrawResponseDto(Utils.getTransactionDto(rollbackWithdraw));
 
         when(accountService.isValid(any(RollbackWithdrawDto.class))).thenReturn(true);
         when(accountService.rollbackWithdraw(any(RollbackWithdrawDto.class))).thenReturn(rollbackWithdraw);
