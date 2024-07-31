@@ -15,7 +15,7 @@ public class Utils {
 
     @SneakyThrows
     public static void waitSomeMoments() {
-        TimeUnit.SECONDS.sleep(new Random().nextInt(MINIMUM_SLEEP_SECONDS, MAXIMUM_SLEEP_SECONDS));
+//        TimeUnit.SECONDS.sleep(new Random().nextInt(MINIMUM_SLEEP_SECONDS, MAXIMUM_SLEEP_SECONDS));
     }
 
     public static RequesterEntity getRequesterEntity(RequesterDto requesterDto) {

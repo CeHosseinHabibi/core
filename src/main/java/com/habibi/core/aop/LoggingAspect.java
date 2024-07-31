@@ -23,7 +23,7 @@ public class LoggingAspect {
     public void publicMethodOfServicePackage() {
     }
 
-    @Around(value = "publicMethodOfControllerPackage() || publicMethodOfServicePackage()")
+//    @Around(value = "publicMethodOfControllerPackage() || publicMethodOfServicePackage()")
     public Object logAround(ProceedingJoinPoint joinPoint) throws Throwable {
         Object[] args = joinPoint.getArgs();
         String methodName = joinPoint.getSignature().toShortString();
